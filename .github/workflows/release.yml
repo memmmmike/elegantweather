@@ -1,0 +1,167 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ElegantWeather ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.10.0'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtnetworkauth'
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build
+        run: |
+          qmake ElegantWeather.pro CONFIG+=release
+          nmake
+
+      - name: Deploy
+        run: |
+          mkdir deploy
+          copy release\ElegantWeather.exe deploy\
+          cd deploy
+          windeployqt.exe ElegantWeather.exe --qmldir ..\ --release
+          cd ..
+          xcopy /E /I weather-ai-agent deploy\weather-ai-agent
+
+      - name: Package
+        run: |
+          Compress-Archive -Path deploy\* -DestinationPath ElegantWeather-Windows-${{ github.ref_name }}.zip
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./ElegantWeather-Windows-${{ github.ref_name }}.zip
+          asset_name: ElegantWeather-Windows-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
+
+  build-macos:
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.10.0'
+          arch: 'clang_64'
+          modules: 'qtnetworkauth'
+
+      - name: Build
+        run: |
+          qmake ElegantWeather.pro CONFIG+=release
+          make
+
+      - name: Deploy
+        run: |
+          macdeployqt ElegantWeather.app -qmldir=. -dmg
+          cp -r weather-ai-agent ElegantWeather.app/Contents/MacOS/
+          hdiutil create -srcfolder ElegantWeather.app -volname "ElegantWeather" -format UDZO ElegantWeather-macOS-${{ github.ref_name }}.dmg
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./ElegantWeather-macOS-${{ github.ref_name }}.dmg
+          asset_name: ElegantWeather-macOS-${{ github.ref_name }}.dmg
+          asset_content_type: application/x-apple-diskimage
+
+  build-linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-cursor0 libfuse2
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.10.0'
+          arch: 'gcc_64'
+          modules: 'qtnetworkauth'
+
+      - name: Build
+        run: |
+          qmake ElegantWeather.pro CONFIG+=release
+          make
+
+      - name: Download linuxdeploy
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+
+      - name: Create desktop file
+        run: |
+          cat > ElegantWeather.desktop << EOF
+          [Desktop Entry]
+          Type=Application
+          Name=ElegantWeather
+          Comment=Modern weather application with AI insights
+          Exec=ElegantWeather
+          Icon=elegantweather
+          Categories=Utility;
+          Terminal=false
+          EOF
+
+      - name: Create AppImage
+        run: |
+          export QMAKE=$Qt6_DIR/bin/qmake
+          ./linuxdeploy-x86_64.AppImage --executable=./ElegantWeather \
+            --appdir=AppDir \
+            --plugin qt \
+            --desktop-file=ElegantWeather.desktop \
+            --output appimage
+          cp -r weather-ai-agent AppDir/usr/bin/
+          mv ElegantWeather*.AppImage ElegantWeather-Linux-${{ github.ref_name }}.AppImage
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./ElegantWeather-Linux-${{ github.ref_name }}.AppImage
+          asset_name: ElegantWeather-Linux-${{ github.ref_name }}.AppImage
+          asset_content_type: application/x-executable

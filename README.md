@@ -4,6 +4,16 @@ A modern, minimalist weather application built with Qt Quick/QML, featuring AI-p
 
 ![ElegantWeather Screenshot](screenshot.png)
 
+## Download
+
+**Pre-built packages are available for download from the [Releases](../../releases) page.**
+
+- **Windows**: Download `ElegantWeather-Windows-vX.X.X.zip`, extract, and run
+- **macOS**: Download `ElegantWeather-macOS-vX.X.X.dmg` and install
+- **Linux**: Download `ElegantWeather-Linux-vX.X.X.AppImage`, make executable, and run
+
+All packages include Qt libraries - no need to install Qt separately.
+
 ## Features
 
 - **Clean, Minimal UI**: Black glassmorphic design with smooth animations
@@ -73,9 +83,27 @@ make
 2. Configure the project with Qt 6.10.0
 3. Build and run
 
-## Deployment (Creating Distributable Packages)
+## Creating a Release (For Maintainers)
 
-After building, you need to bundle Qt libraries with your executable to distribute the app. Qt provides deployment tools for each platform.
+Releases are built automatically by GitHub Actions. To create a new release:
+
+1. **Tag a version** (triggers automatic builds):
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+2. **GitHub Actions will automatically**:
+   - Build packages for Windows, macOS, and Linux
+   - Bundle all Qt libraries with each package
+   - Create a GitHub Release
+   - Upload all packages to the release
+
+3. **Users can then download** pre-built packages from the Releases page
+
+### Manual Deployment (Optional)
+
+If you need to build packages locally instead of using GitHub Actions:
 
 ### Windows
 
