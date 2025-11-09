@@ -29,7 +29,7 @@ All packages include Qt libraries - no need to install Qt separately.
 
 ## Requirements
 
-- **Qt 6.10.0** or later
+- **Qt 6.7** or later (6.7.2 recommended)
 - **Python 3.x** (for AI service)
 - **Ollama** with **llama3.2** model installed
 - **API Keys**:
@@ -38,7 +38,7 @@ All packages include Qt libraries - no need to install Qt separately.
 
 ## Installation
 
-### 1. Install Qt 6.10.0
+### 1. Install Qt 6.7+
 
 Download and install Qt from the [official website](https://www.qt.io/download).
 
@@ -73,14 +73,14 @@ make
 Or use the full Qt path:
 
 ```bash
-/path/to/Qt/6.10.0/gcc_64/bin/qmake ElegantWeather.pro
+/path/to/Qt/6.7.2/gcc_64/bin/qmake ElegantWeather.pro
 make
 ```
 
 ### Using Qt Creator
 
 1. Open `ElegantWeather.pro` in Qt Creator
-2. Configure the project with Qt 6.10.0
+2. Configure the project with Qt 6.7+
 3. Build and run
 
 ## Creating a Release (For Maintainers)
@@ -117,7 +117,7 @@ copy release\ElegantWeather.exe deploy\
 3. Run `windeployqt` to bundle Qt libraries:
 ```cmd
 cd deploy
-C:\Qt\6.10.0\msvc2022_64\bin\windeployqt.exe ElegantWeather.exe --qmldir ..\
+C:\Qt\6.7.2\msvc2019_64\bin\windeployqt.exe ElegantWeather.exe --qmldir ..\
 ```
 
 4. Copy Python AI service:
@@ -134,7 +134,7 @@ xcopy /E /I ..\weather-ai-agent weather-ai-agent
 1. Build your application in **Release** mode
 2. Run `macdeployqt` to create an app bundle:
 ```bash
-/path/to/Qt/6.10.0/macos/bin/macdeployqt ElegantWeather.app -qmldir=. -dmg
+/path/to/Qt/6.7.2/macos/bin/macdeployqt ElegantWeather.app -qmldir=. -dmg
 ```
 
 3. Copy Python AI service into the app bundle:
@@ -166,7 +166,7 @@ chmod +x linuxdeploy*.AppImage
 
 3. Create AppImage:
 ```bash
-export QMAKE=/path/to/Qt/6.10.0/gcc_64/bin/qmake
+export QMAKE=/path/to/Qt/6.7.2/gcc_64/bin/qmake
 ./linuxdeploy-x86_64.AppImage --executable=./ElegantWeather \
   --appdir=AppDir \
   --plugin qt \
@@ -194,7 +194,7 @@ cp ElegantWeather deploy/ElegantWeather/
 3. Copy Qt libraries:
 ```bash
 cd deploy/ElegantWeather
-/path/to/Qt/6.10.0/gcc_64/bin/linuxdeployqt-continuous-x86_64.AppImage \
+/path/to/Qt/6.7.2/gcc_64/bin/linuxdeployqt-continuous-x86_64.AppImage \
   ./ElegantWeather -qmldir=../../ -bundle-non-qt-libs
 ```
 
@@ -342,7 +342,7 @@ Ensure your Unsplash API key is correct, or the app will use a default gradient 
 3. Check that Python service is running on port 5001
 
 ### Build Errors
-Ensure you're using Qt 6.10.0 or later. Earlier versions may not support all QML features used in this project.
+Ensure you're using Qt 6.7.2 or later. Earlier versions may not support all QML features used in this project.
 
 ## Contributing
 
