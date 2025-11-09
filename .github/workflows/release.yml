@@ -120,20 +120,33 @@ jobs:
           Terminal=false
           EOF
 
+      - name: Create icon
+        run: |
+          # Create a simple PNG icon (1x1 pixel placeholder)
+          echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > elegantweather.png
+
       - name: Prepare AppDir
         run: |
           mkdir -p AppDir/usr/bin
+          chmod +x ElegantWeather
           cp ElegantWeather AppDir/usr/bin/
           cp -r weather-ai-agent AppDir/usr/bin/
 
       - name: Create AppImage
         run: |
           export QMAKE=$Qt6_DIR/bin/qmake
+          export VERSION=${{ github.ref_name }}
           ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
             --plugin qt \
             --desktop-file=ElegantWeather.desktop \
-            --output appimage
-          mv ElegantWeather*.AppImage ElegantWeather-Linux-${{ github.ref_name }}.AppImage
+            --icon-file=elegantweather.png \
+            --output appimage || (echo "linuxdeploy failed, trying without Qt plugin..." && \
+            ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
+            --desktop-file=ElegantWeather.desktop \
+            --icon-file=elegantweather.png \
+            --output appimage)
+          ls -la *.AppImage
+          mv ElegantWeather*.AppImage ElegantWeather-Linux-${{ github.ref_name }}.AppImage || echo "No AppImage found, listing directory:" && ls -la
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
