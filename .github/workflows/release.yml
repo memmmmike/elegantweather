@@ -5,25 +5,11 @@ on:
     tags:
       - 'v*.*.*'
 
-jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ElegantWeather ${{ github.ref }}
-          draft: false
-          prerelease: false
+permissions:
+  contents: write
 
+jobs:
   build-windows:
-    needs: create-release
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -58,17 +44,11 @@ jobs:
           Compress-Archive -Path deploy\* -DestinationPath ElegantWeather-Windows-${{ github.ref_name }}.zip
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./ElegantWeather-Windows-${{ github.ref_name }}.zip
-          asset_name: ElegantWeather-Windows-${{ github.ref_name }}.zip
-          asset_content_type: application/zip
+          files: ElegantWeather-Windows-${{ github.ref_name }}.zip
 
   build-macos:
-    needs: create-release
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -93,17 +73,11 @@ jobs:
           hdiutil create -srcfolder ElegantWeather.app -volname "ElegantWeather" -format UDZO ElegantWeather-macOS-${{ github.ref_name }}.dmg
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./ElegantWeather-macOS-${{ github.ref_name }}.dmg
-          asset_name: ElegantWeather-macOS-${{ github.ref_name }}.dmg
-          asset_content_type: application/x-apple-diskimage
+          files: ElegantWeather-macOS-${{ github.ref_name }}.dmg
 
   build-linux:
-    needs: create-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -157,11 +131,6 @@ jobs:
           mv ElegantWeather*.AppImage ElegantWeather-Linux-${{ github.ref_name }}.AppImage
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./ElegantWeather-Linux-${{ github.ref_name }}.AppImage
-          asset_name: ElegantWeather-Linux-${{ github.ref_name }}.AppImage
-          asset_content_type: application/x-executable
+          files: ElegantWeather-Linux-${{ github.ref_name }}.AppImage
