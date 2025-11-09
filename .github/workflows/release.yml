@@ -120,15 +120,19 @@ jobs:
           Terminal=false
           EOF
 
+      - name: Prepare AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          cp ElegantWeather AppDir/usr/bin/
+          cp -r weather-ai-agent AppDir/usr/bin/
+
       - name: Create AppImage
         run: |
           export QMAKE=$Qt6_DIR/bin/qmake
-          ./linuxdeploy-x86_64.AppImage --executable=./ElegantWeather \
-            --appdir=AppDir \
+          ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
             --plugin qt \
             --desktop-file=ElegantWeather.desktop \
             --output appimage
-          cp -r weather-ai-agent AppDir/usr/bin/
           mv ElegantWeather*.AppImage ElegantWeather-Linux-${{ github.ref_name }}.AppImage
 
       - name: Upload Release Asset
