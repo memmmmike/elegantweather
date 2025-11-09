@@ -73,6 +73,143 @@ make
 2. Configure the project with Qt 6.10.0
 3. Build and run
 
+## Deployment (Creating Distributable Packages)
+
+After building, you need to bundle Qt libraries with your executable to distribute the app. Qt provides deployment tools for each platform.
+
+### Windows
+
+1. Build your application in **Release** mode
+2. Create a deployment folder and copy your executable:
+```cmd
+mkdir deploy
+copy release\ElegantWeather.exe deploy\
+```
+
+3. Run `windeployqt` to bundle Qt libraries:
+```cmd
+cd deploy
+C:\Qt\6.10.0\msvc2022_64\bin\windeployqt.exe ElegantWeather.exe --qmldir ..\
+```
+
+4. Copy Python AI service:
+```cmd
+xcopy /E /I ..\weather-ai-agent weather-ai-agent
+```
+
+5. Your `deploy` folder now contains a complete, redistributable application. Zip it and distribute.
+
+**Result**: ~40-60MB package that runs on any Windows 10+ system without Qt installed.
+
+### macOS
+
+1. Build your application in **Release** mode
+2. Run `macdeployqt` to create an app bundle:
+```bash
+/path/to/Qt/6.10.0/macos/bin/macdeployqt ElegantWeather.app -qmldir=. -dmg
+```
+
+3. Copy Python AI service into the app bundle:
+```bash
+cp -r weather-ai-agent ElegantWeather.app/Contents/MacOS/
+```
+
+4. This creates `ElegantWeather.dmg` - a distributable disk image.
+
+**Optional**: Sign and notarize for distribution outside the App Store:
+```bash
+codesign --deep --force --verify --verbose --sign "Developer ID Application: Your Name" ElegantWeather.app
+xcrun notarytool submit ElegantWeather.dmg --keychain-profile "notary-profile" --wait
+```
+
+**Result**: A `.dmg` file that runs on macOS 10.15+ without Qt installed.
+
+### Linux
+
+#### Option 1: AppImage (Recommended - Single File)
+
+1. Build your application in **Release** mode
+2. Install `linuxdeploy` and Qt plugin:
+```bash
+wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+chmod +x linuxdeploy*.AppImage
+```
+
+3. Create AppImage:
+```bash
+export QMAKE=/path/to/Qt/6.10.0/gcc_64/bin/qmake
+./linuxdeploy-x86_64.AppImage --executable=./ElegantWeather \
+  --appdir=AppDir \
+  --plugin qt \
+  --output appimage \
+  --desktop-file=ElegantWeather.desktop \
+  --icon-file=icon.png
+```
+
+4. Copy Python AI service:
+```bash
+cp -r weather-ai-agent AppDir/usr/bin/
+```
+
+**Result**: Single `ElegantWeather-x86_64.AppImage` file (~50-70MB) that runs on most Linux distros.
+
+#### Option 2: Tarball with Bundled Libraries
+
+1. Build in **Release** mode
+2. Create deployment folder:
+```bash
+mkdir -p deploy/ElegantWeather
+cp ElegantWeather deploy/ElegantWeather/
+```
+
+3. Copy Qt libraries:
+```bash
+cd deploy/ElegantWeather
+/path/to/Qt/6.10.0/gcc_64/bin/linuxdeployqt-continuous-x86_64.AppImage \
+  ./ElegantWeather -qmldir=../../ -bundle-non-qt-libs
+```
+
+4. Copy Python AI service:
+```bash
+cp -r ../../weather-ai-agent .
+```
+
+5. Create launcher script `run.sh`:
+```bash
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export LD_LIBRARY_PATH="$DIR/lib:$LD_LIBRARY_PATH"
+cd "$DIR"
+./ElegantWeather "$@"
+```
+
+6. Package:
+```bash
+cd ..
+tar czf ElegantWeather-linux-x86_64.tar.gz ElegantWeather/
+```
+
+**Result**: Tarball that extracts and runs on most Linux distributions.
+
+### Distribution Checklist
+
+Before distributing, ensure you've included:
+- [ ] All required Qt libraries (auto-handled by deployment tools)
+- [ ] QML imports and plugins
+- [ ] Python AI service (`weather-ai-agent/`)
+- [ ] Python dependencies (users still need Python 3 and Ollama)
+- [ ] README with setup instructions for API keys
+- [ ] License file
+
+### Package Sizes
+- **Windows**: ~40-60 MB
+- **macOS**: ~45-65 MB
+- **Linux AppImage**: ~50-70 MB
+- **Linux tarball**: ~35-55 MB
+
+These sizes include all Qt libraries needed to run on systems without Qt installed.
+
 ## Configuration
 
 ### First Run
